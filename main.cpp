@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cv.h>
 #include "opencv2/highgui/highgui.hpp"
+#include "video.h"
 
 using namespace cv;
 using namespace std;
@@ -125,7 +126,7 @@ void thresh_callback(int, void* )
     drawingContour = Mat::zeros(threshold_output.size(), CV_8UC3 );
     for( int i = 0; i< contours.size(); i++ )
     {
-        Scalar color = Scalar( 255, 0, 0 );
+        Scalar color = Scalar( theRNG().uniform(0, 255), theRNG().uniform(0, 255), theRNG().uniform(0, 255));
         drawContours( drawingContour, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
         drawContours( drawingContour, hull, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
     }
@@ -156,9 +157,9 @@ void detectWallColor(){
 }
 
 void filterOutNotWall(){
-    uchar subDelete = 50;
+    uchar subDelete = 50, upDelete = 255 ;
     for (MatIterator_<uchar> it = gray.begin<uchar>(); it != gray.end<uchar>(); it++){
-        if (*it < subDelete){
+        if (*it < subDelete || *it > upDelete){
             *it = (uchar)0;
         }
     }
@@ -180,29 +181,8 @@ void initThings(){
     thresh_callback( 0, 0 );
 }
 
-void video(char* videoName){
-    VideoCapture cap;
-    if (videoName != NULL)
-        cap.open(videoName);
-    else
-        cap = VideoCapture(0);
-    if(!cap.isOpened())  // check if we succeeded
-        return;
-    cap >> toDisplayVideo;
-    initThings();
-    while(cap.isOpened()){
-        clock_t tStart = clock();
-        doThings();
-        draw();
-        double timeTaken = (double)(clock() - tStart)/CLOCKS_PER_SEC;
-        //printf("Time taken: %.2fs\n", timeTaken*100.0);
-        cap >> toDisplayVideo;
-        if (waitKey(33 - (int)(timeTaken * 100.0 + 1)) >= 0)
-            return;
-    }
-}
-
 int main() {
-    video("../good30fps.flv");
+    Video v = Video(initThings, doThings, draw);
+    v.openvideo("../good30fps.flv", toDisplayVideo);
 }
 
