@@ -6,14 +6,7 @@
 using namespace cv;
 using namespace std;
 
-Mat toDisplayVideo, colorImg, gray, drawingContour;
-
-ORB orb = ORB(150, 1.5, 8 /*, 2, 0, 2, ORB::HARRIS_SCORE, 2*/);
-
-vector<KeyPoint> kp;
-
-vector<Point2f> kpPoints;
-vector<char> isKpGood;
+Mat toDisplayVideo, gray, drawingContour;
 
 int thresh = 100;
 
@@ -71,38 +64,9 @@ Point2i pointsToFetch[45] = {
 
 void draw() {
     imshow("scene", toDisplayVideo);
-    //imshow("gray", gray);
-    //imshow("brighter color", colorImg);
     imshow("Hull demo", drawingContour);
-
-    //imshow("filter", filterImg);
     /// callback mouse if necessary
 }
-
-/*void detectAndDescribe(){
-    orb.detect(toDisplayVideo, kp);
-    //orb.compute(toDisplayVideo, kp, dp);
-    KeyPoint::convert(kp, kpPoints);
-    isKpGood.assign(kpPoints.size(), 1);
-}
-
-void filterPoints(){
-    filterImg = Mat::zeros(filterImg.size(), filterImg.type());
-    for (int i = 0; i < kpPoints.size(); i++) {
-        if (filterImg.at<uchar>(kpPoints[i]) != 0){
-            isKpGood[i] = 0;
-        } else {
-            circle(filterImg, kpPoints[i], 7, Scalar(255,255,255), -1);
-        }
-    }
-}
-
-void displayKeyPoints(){
-    for (int i = 0; i < kpPoints.size(); i++) {
-        if (isKpGood[i] == 1)
-            circle(toDisplayVideo, kpPoints[i], 2, Scalar(0,0,255), -1);
-    }
-}*/
 
 void thresh_callback(int, void* )
 {
@@ -128,52 +92,34 @@ void thresh_callback(int, void* )
     {
         Scalar color = Scalar( theRNG().uniform(0, 255), theRNG().uniform(0, 255), theRNG().uniform(0, 255));
         drawContours( drawingContour, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-        drawContours( drawingContour, hull, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+        //drawContours( drawingContour, hull, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
     }
-}
-
-void detectWallColor(){
-    /*vector<Scalar> colors;
-    for (Point2i p : pointsToFetch){
-        Vec3b data = toDisplayVideo.at<Vec3b>(p);
-        Scalar col(data[0], data[1], data[2]);
-        circle(toDisplayVideo, p, 18, col, -1);
-        if (colors.empty())
-            colors.push_back(col);
-        for (Scalar s : colors){
-            if ( abs(s[0] - col[0]) > 2 &&
-                 abs(s[1] - col[1]) > 2 &&
-                 abs(s[2] - col[2]) > 2)
-                colors.push_back(col);
-        }
-    }
-    rectangle(colorImg, Point2i(0,0), Point2i(50,50), Scalar(0,0,0), -1);
-    if (colors.size() > 0)
-        rectangle(colorImg, Point2i(0,0), Point2i(25,25), colors[0], -1);
-    if (colors.size() > 1)
-        rectangle(colorImg, Point2i(25,0), Point2i(50,25), colors[1], -1);
-    if (colors.size() > 2)
-        rectangle(colorImg, Point2i(25,25), Point2i(50,50), colors[2], -1);*/
 }
 
 void filterOutNotWall(){
     uchar subDelete = 50, upDelete = 255 ;
-    for (MatIterator_<uchar> it = gray.begin<uchar>(); it != gray.end<uchar>(); it++){
-        if (*it < subDelete || *it > upDelete){
-            *it = (uchar)0;
+    for (MatIterator_<uchar> it = gray.begin<uchar>(); it != gray.end<uchar>(); it++) {
+        if (*it < subDelete || *it > upDelete) {
+            *it = (uchar) 0;
+        }
+    }
+    /// concentrate into the middle of the image
+    /// the zone is about 50 < x  
+    for (int i = 0; i < gray.rows; i++){
+        for (int j = 0; j < gray.cols; j++){
+            if (i < 50 || j < 150 || j > gray.cols - 210)
+                gray.at<uchar>(i, j) = 0;
         }
     }
 }
 
 void doThings(){
     cvtColor(toDisplayVideo, gray, COLOR_RGB2GRAY);
-    detectWallColor();
     filterOutNotWall();
     thresh_callback( 0, 0 );
 }
 
 void initThings(){
-    colorImg = Mat::zeros(50, 50, toDisplayVideo.type());
     cvtColor(toDisplayVideo, gray, COLOR_RGB2GRAY);
     namedWindow("scene", CV_WINDOW_AUTOSIZE);
     namedWindow("Hull demo", CV_WINDOW_AUTOSIZE);
