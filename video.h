@@ -18,8 +18,8 @@ typedef void (*Callback)();
 class Video {
 
 private:
-    bool paused;
-    bool stopping;
+    bool paused = false;
+    bool stopping = false;
     int frameTime = 33;
     Callback initCallback;
     Callback doThingsCallback;
