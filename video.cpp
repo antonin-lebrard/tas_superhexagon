@@ -15,10 +15,13 @@ void Video::openvideo(String videoName, Mat &frame) {
         clock_t tStart = clock();
         this->doThingsCallback();
         this->drawCallback();
+        bool signalFromProg = this->stopAtFrame();
         double timeTaken = (double)(clock() - tStart)/CLOCKS_PER_SEC;
         //printf("Time taken: %.2fs\n", timeTaken*100.0);
         cap >> frame;
         char key = (char) waitKey(frameTime - (int)(timeTaken * 100.0 + 1));
+        if (signalFromProg)
+            key = 'p';
         switch (key){
             case 'p':
                 paused = true;
@@ -42,9 +45,10 @@ void Video::openvideo(String videoName, Mat &frame) {
     }
 }
 
-Video::Video(Callback initCallback, Callback doThingsCallback, Callback drawCallback)
+Video::Video(Callback initCallback, Callback doThingsCallback, Callback drawCallback, IsWaitingCallback stopAtFrame)
 {
     this->initCallback = initCallback;
     this->doThingsCallback = doThingsCallback;
     this->drawCallback = drawCallback;
+    this->stopAtFrame = stopAtFrame;
 }
