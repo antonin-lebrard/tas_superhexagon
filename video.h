@@ -14,6 +14,7 @@ using namespace cv;
 using namespace std;
 
 typedef void (*Callback)();
+typedef bool (*IsWaitingCallback)();
 
 class Video {
 
@@ -24,9 +25,10 @@ private:
     Callback initCallback;
     Callback doThingsCallback;
     Callback drawCallback;
+    IsWaitingCallback stopAtFrame;
 
 public:
-    Video(Callback initCallback, Callback doThingsCallback, Callback drawCallback);
+    Video(Callback initCallback, Callback doThingsCallback, Callback drawCallback, IsWaitingCallback stopAtFrame);
 
     void openvideo(String videoName, Mat &frame);
 };
