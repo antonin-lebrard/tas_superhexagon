@@ -3,7 +3,7 @@ project(project)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(SOURCE_FILES main.cpp video.cpp video.h Raycast.cpp Raycast.h)
+set(SOURCE_FILES main.cpp video.cpp video.h Raycast.cpp Raycast.h utils.cpp utils.h globals.h globals.cpp.cpp)
 add_executable(project ${SOURCE_FILES})
 
 find_package(OpenCV REQUIRED)
