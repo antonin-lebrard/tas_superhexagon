@@ -68,6 +68,20 @@ void draw() {
     /// callback mouse if necessary
 }
 
+void trianglesDetect(Mat& img, const vector< vector<Point> >& contours){
+    vector<Point> approxTriangle;
+    for(size_t i = 0; i < contours.size(); i++){
+        approxPolyDP(contours[i], approxTriangle, arcLength(Mat(contours[i]), true)*0.05, true);
+        if(approxTriangle.size() == 3){
+            //drawContours(img, contours, i, Scalar(0, 255, 255), CV_FILLED); // fill GREEN
+            vector<Point>::iterator vertex;
+            for(vertex = approxTriangle.begin(); vertex != approxTriangle.end(); ++vertex){
+                circle(img, *vertex, 3, Scalar(0, 0, 255), 1);
+            }
+        }
+    }
+}
+
 void thresh_callback(int, void* )
 {
     Mat threshold_output;
@@ -94,13 +108,17 @@ void thresh_callback(int, void* )
         drawContours( drawingContour, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
         //drawContours( drawingContour, hull, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
     }
+    trianglesDetect(toDisplayVideo, contours);
 }
 
-void filterOutNotWall(){
+void filterOutNotWall() {
     uchar subDelete = 50, upDelete = 255 ;
     for (MatIterator_<uchar> it = gray.begin<uchar>(); it != gray.end<uchar>(); it++) {
         if (*it < subDelete || *it > upDelete) {
             *it = (uchar) 0;
+        }
+        else {
+            *it = (uchar) 255;
         }
     }
     /// concentrate into the middle of the image
@@ -131,4 +149,3 @@ int main() {
     Video v = Video(initThings, doThings, draw);
     v.openvideo("../good30fps.flv", toDisplayVideo);
 }
-
