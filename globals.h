@@ -5,6 +5,23 @@
 #ifndef PROJECT_GLOBALS_H
 #define PROJECT_GLOBALS_H
 
+#include <iostream>
+#include <cv.h>
+#include "opencv2/highgui/highgui.hpp"
+
+using namespace cv;
+using namespace std;
+
+struct RaycastHit {
+    Point2i stoppingPoint;
+    int distanceSquared;
+    int nbWhiteToBlackPassthrough = 0;
+};
+
+struct TriangleDetected {
+    vector<Point> points;
+    double perimeterSquared = 0.0;
+};
 
 class Globals{
 public:
