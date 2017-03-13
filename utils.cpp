@@ -96,13 +96,28 @@ void Utils::launchRaycasting(Mat& grayscale, Mat& drawingContours, Mat& videoDis
             raycastCollisions.push_back(Raycast::detectCollision(grayscale, drawingContours, direction, 2, colorRaycast));
         }
         // TODO : maybe possible to do it while computing RaycastHits
+        vector<vector<RaycastHit>> zones = vector<vector<RaycastHit>>();
+        zones.push_back(vector<RaycastHit>());
+        zones[0].push_back(raycastCollisions[0]);
         int maxDistanceSquared = raycastCollisions[0].distanceSquared;
         int idx = 0;
+        int diff;
         for (int i = 1; i < 16; i++) {
-            int diff = raycastCollisions[i].distanceSquared - maxDistanceSquared;
-            if (diff > 1000 && !raycastCollisions[i].invalidate){
-                maxDistanceSquared = raycastCollisions[i].distanceSquared;
-                idx = i;
+            diff = raycastCollisions[i].distanceSquared - maxDistanceSquared;
+            if (diff > -6000 && diff < 6000)
+                zones[zones.size()-1].push_back(raycastCollisions[i]);
+            else {
+                zones.push_back(vector<RaycastHit>());
+                zones[zones.size()-1].push_back(raycastCollisions[i]);
+            }
+        }
+        for (int i = 0; i < zones.size(); i++) {
+            if (zones[i].size() != 0) {
+                vector<Point2i> sommets = vector<Point2i>();
+                sommets.push_back(middle);
+                sommets.push_back(zones[i][0].stoppingPoint);
+                sommets.push_back(zones[i][zones[i].size()-1].stoppingPoint);
+                fillConvexPoly(drawingContours, sommets, 3);
             }
         }
         circle(drawingContours, raycastCollisions[idx].stoppingPoint, 16, Scalar(0, 255, 0), -1);
