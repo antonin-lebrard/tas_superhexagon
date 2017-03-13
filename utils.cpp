@@ -78,9 +78,11 @@ void Utils::launchRaycasting(Mat& grayscale, Mat& drawingContours, Mat& videoDis
     vector<RaycastHit> raycastCollisions = vector<RaycastHit>();
     if (triangles.size() > 0){
         Point2d directionToTriangle = directionMiddleToTriangle(triangles[0], middle);
+        dilateTriangleToRect(triangles[0], grayscale);
+        Scalar colorRaycast = Scalar(0,0,255);
         raycastCollisions.push_back(
                 Raycast::detectCollision(
-                        grayscale, drawingContours, directionToTriangle, true
+                        grayscale, drawingContours, directionToTriangle, 4, colorRaycast
                 )
         );
         const double angleStep = CV_PI / 180.0 * 22.5;
@@ -91,17 +93,17 @@ void Utils::launchRaycasting(Mat& grayscale, Mat& drawingContours, Mat& videoDis
             currentAngle = isStepMinus ? - (angleStep * step) : (angleStep * step);
             isStepMinus = !isStepMinus;
             Point2d direction = rotateVectorByAngle(directionToTriangle, middle, currentAngle);
-            raycastCollisions.push_back(Raycast::detectCollision(grayscale, drawingContours, direction, false));
+            raycastCollisions.push_back(Raycast::detectCollision(grayscale, drawingContours, direction, 2, colorRaycast));
         }
         // TODO : maybe possible to do it while computing RaycastHits
-        int maxDistanceSquared = raycastCollisions[0].distanceSquared, idx = 0;
-        for (int i = 1; i < 16; i++){
-            if (raycastCollisions[i].distanceSquared > maxDistanceSquared){
-                idx = i;
+        int maxDistanceSquared = raycastCollisions[0].distanceSquared;
+        int idx = 0;
+        for (int i = 1; i < 16; i++) {
+            int diff = raycastCollisions[i].distanceSquared - maxDistanceSquared;
+            if (diff > 1000 && !raycastCollisions[i].invalidate){
                 maxDistanceSquared = raycastCollisions[i].distanceSquared;
+                idx = i;
             }
-            if (maxDistanceSquared > 100)
-                break;
         }
         circle(drawingContours, raycastCollisions[idx].stoppingPoint, 16, Scalar(0, 255, 0), -1);
     }
@@ -133,3 +135,19 @@ Point2d Utils::rotateVectorByAngle(const Point2d& vec, const Point2i& pivot, con
     );
     return vecRotated;
 }
+
+void Utils::dilateTriangleToRect(const TriangleDetected& triangle, Mat& grayscale) {
+    int xLeftMost = triangle.points[0].x, xRightMost = triangle.points[0].x, yUpMost = triangle.points[0].y, yDownMost = triangle.points[0].y;
+    for (int i = 1; i < triangle.points.size(); i++) {
+        if (triangle.points[i].x < xLeftMost)
+            xLeftMost = triangle.points[i].x;
+        if (triangle.points[i].x > xRightMost)
+            xRightMost = triangle.points[i].x;
+        if (triangle.points[i].y < yUpMost)
+            yUpMost = triangle.points[i].y;
+        if (triangle.points[i].y > yDownMost)
+            yDownMost = triangle.points[i].y;
+    }
+    rectangle(grayscale, Point2i(xLeftMost, yUpMost), Point2i(xRightMost, yDownMost), Scalar(255,255,255), CV_FILLED);
+}
+
