@@ -15,7 +15,7 @@ using namespace std;
 struct RaycastHit {
     Point2i stoppingPoint;
     int distanceSquared;
-    int nbWhiteToBlackPassthrough = 0;
+    bool invalidate = false;
 };
 
 struct TriangleDetected {
