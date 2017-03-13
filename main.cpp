@@ -4,7 +4,6 @@
 #include "video.h"
 #include "Raycast.h"
 #include "utils.h"
-#include "globals.h"
 
 using namespace cv;
 using namespace std;
@@ -21,12 +20,6 @@ void draw() {
 void doThings(){
     cvtColor(toDisplayVideo, gray, COLOR_RGB2GRAY);
     Utils::launchRaycasting(gray, drawingContour, toDisplayVideo);
-    /*Utils::filterOutNotWall(gray);
-    Utils::computeContours(gray, drawingContour, toDisplayVideo);
-    Raycast::detectCollision(gray, drawingContour, Point2d(-1.0, 0.0), false);
-    Raycast::detectCollision(gray, drawingContour, Point2d(0.0, -1.0), false);
-    Raycast::detectCollision(gray, drawingContour, Point2d(1.0, 0.0), false);
-    Raycast::detectCollision(gray, drawingContour, Point2d(0.0, 1.0), false);*/
 }
 
 void initThings(){
@@ -52,3 +45,4 @@ int main() {
     Video v = Video(initThings, doThings, draw, stopAtFrame);
     v.openvideo("../good30fps.flv", toDisplayVideo);
 }
+
