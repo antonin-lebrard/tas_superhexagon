@@ -12,26 +12,41 @@
  * @param isTriangleOnTheWay if triangle is in direction of ray, so should be ignored
  * @return point of collision with first wall in direction of vectorLine
  */
-RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vectorLine, bool triangleOnTheWay) {
+RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vectorLine, int countChangeOfColorToIgnore, const Scalar& color) {
     RaycastHit hit = RaycastHit();
     const Point2i initialPoint = Point2i(img.cols / 2, img.rows / 2);
     Point2i current = Point2i(img.cols / 2, img.rows / 2);
     const double absX = abs(vectorLine.x), absY = abs(vectorLine.y);
     uchar lastColor = img.at<uchar>(initialPoint);
-    int countChangeOfColorToIgnore = 2 + (triangleOnTheWay ? 2 : 0);
+    int countCurrentNbPixelsWhite = 0;
+    //int countChangeOfColorToIgnore = 2 + (triangleOnTheWay ? 2 : 0);
     if (absX > absY){
         if (vectorLine.x < 0.0) {
             for (int i = initialPoint.x; i >= 0; i--) {
                 if (algoXStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, i))
                     break;
-                circle(drawing, current, 1, Scalar(0, 0, 255), -1);
+                if (lastColor == 255){
+                    countCurrentNbPixelsWhite++;
+                    if (countCurrentNbPixelsWhite > 300)
+                        hit.invalidate = true;
+                } else {
+                    countCurrentNbPixelsWhite = 0;
+                }
+                circle(drawing, current, 1, color, -1);
             }
         }
         else {
             for (int i = current.x; i < img.cols; i++) {
                 if (algoXStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, i))
                     break;
-                circle(drawing, current, 1, Scalar(0, 0, 255), -1);
+                if (lastColor == 255){
+                    countCurrentNbPixelsWhite++;
+                    if (countCurrentNbPixelsWhite > 300)
+                        hit.invalidate = true;
+                } else {
+                    countCurrentNbPixelsWhite = 0;
+                }
+                circle(drawing, current, 1, color, -1);
             }
         }
     }
@@ -40,14 +55,28 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vector
             for (int j = initialPoint.y; j >= 0; j--){
                 if (algoYStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, j))
                     break;
-                circle(drawing, current, 1, Scalar(0, 0, 255), -1);
+                if (lastColor == 255){
+                    countCurrentNbPixelsWhite++;
+                    if (countCurrentNbPixelsWhite > 300)
+                        hit.invalidate = true;
+                } else {
+                    countCurrentNbPixelsWhite = 0;
+                }
+                circle(drawing, current, 1, color, -1);
             }
         }
         else {
             for (int j = initialPoint.y; j < img.rows; j++){
                 if (algoYStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, j))
                     break;
-                circle(drawing, current, 1, Scalar(0, 0, 255), -1);
+                if (lastColor == 255){
+                    countCurrentNbPixelsWhite++;
+                    if (countCurrentNbPixelsWhite > 300)
+                        hit.invalidate = true;
+                } else {
+                    countCurrentNbPixelsWhite = 0;
+                }
+                circle(drawing, current, 1, color, -1);
             }
         }
     }
@@ -114,3 +143,4 @@ bool Raycast::algoYStopOnCollision(const Mat& img, uchar& lastColor, int& nbChan
     }
     return false;
 }
+
