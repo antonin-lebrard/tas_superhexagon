@@ -23,7 +23,7 @@ private:
     static bool algoYStopOnCollision(const Mat& img, uchar& lastColor, int& nbChangeToIgnore, Point2i& pointToMove, const Point2d& lineVec, const Point2i& initialPoint, const int& y);
     
 public:
-    static RaycastHit detectCollision(Mat& img, Mat& drawing, const Point2d lineVec, bool triangleOnTheWay);
+    static RaycastHit detectCollision(Mat& img, Mat& drawing, const Point2d lineVec, int countChangeOfColorToIgnore, const Scalar& color);
 };
 
 
