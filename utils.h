@@ -20,6 +20,7 @@ public:
     static void filterOutNotWall(Mat& grayscale);
     static vector<TriangleDetected> computeContours(Mat& grayscale, Mat& drawingContours, Mat& videoDisplay);
     static void detectTriangle(Mat& img, const vector<vector<Point>>& contours, vector<TriangleDetected>& trianglesDetected);
+    static bool isOnBorder(const Point2i& p, const Mat& img);
 private:
     static Point2d directionMiddleToTriangle(const TriangleDetected& triangle, const Point2i& middle);
     static Point2d rotateVectorByAngle(const Point2d& vec, const Point2i& pivot, const double angle);
