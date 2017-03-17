@@ -99,13 +99,19 @@ void Utils::launchRaycasting(Mat& grayscale, Mat& drawingContours, Mat& videoDis
         vector<vector<RaycastHit>> zones = vector<vector<RaycastHit>>();
         zones.push_back(vector<RaycastHit>());
         zones[0].push_back(raycastCollisions[0]);
-        int maxDistanceSquared = raycastCollisions[0].distanceSquared;
-        int idx = 0;
+        //int idx = 0;
         int diff;
-        for (int i = 1; i < 16; i++) {
-            diff = raycastCollisions[i].distanceSquared - maxDistanceSquared;
-            if (diff > -6000 && diff < 6000)
+        for (int i = 2; i < 16; i++) {
+            Point2i& p = raycastCollisions[i].stoppingPoint;
+            Point2i& pBefore = raycastCollisions[i-2].stoppingPoint;
+            if (isOnBorder(pBefore, grayscale) && isOnBorder(p, grayscale)) {
                 zones[zones.size()-1].push_back(raycastCollisions[i]);
+                continue;
+            }
+            diff = abs(raycastCollisions[i].distanceSquared - raycastCollisions[i-2].distanceSquared);
+            if (diff < 100){
+                zones[zones.size()-1].push_back(raycastCollisions[i]);
+            }
             else {
                 zones.push_back(vector<RaycastHit>());
                 zones[zones.size()-1].push_back(raycastCollisions[i]);
@@ -117,10 +123,10 @@ void Utils::launchRaycasting(Mat& grayscale, Mat& drawingContours, Mat& videoDis
                 sommets.push_back(middle);
                 sommets.push_back(zones[i][0].stoppingPoint);
                 sommets.push_back(zones[i][zones[i].size()-1].stoppingPoint);
-                fillConvexPoly(drawingContours, sommets, 3);
+                fillConvexPoly(drawingContours, sommets, Scalar(0,255,0));
             }
         }
-        circle(drawingContours, raycastCollisions[idx].stoppingPoint, 16, Scalar(0, 255, 0), -1);
+        //circle(drawingContours, raycastCollisions[idx].stoppingPoint, 16, Scalar(0, 255, 0), -1);
     }
 }
 
@@ -164,5 +170,19 @@ void Utils::dilateTriangleToRect(const TriangleDetected& triangle, Mat& grayscal
             yDownMost = triangle.points[i].y;
     }
     rectangle(grayscale, Point2i(xLeftMost, yUpMost), Point2i(xRightMost, yDownMost), Scalar(255,255,255), CV_FILLED);
+}
+
+bool Utils::isOnBorder(const Point2i& p, const Mat &img) {
+    int w = img.cols;
+    int h = img.rows;
+    if (p.x == 0 || p.x == -1 || p.x == 1)
+        return true;
+    if (p.x == w-1 || p.x == w || p.x == w+1)
+        return true;
+    if (p.y == 0 || p.y == -1 || p.y == 1)
+        return true;
+    if (p.y == h-1 || p.y == h || p.y == h+1)
+        return true;
+    return false;
 }
 
