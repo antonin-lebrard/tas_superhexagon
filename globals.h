@@ -28,6 +28,8 @@ public:
     static bool stopAtThisFrame;
     static int thresh;
     static int countIgnore;
+    static void textOnImage(Mat& img, const double& d, const Point2i& p);
+    static void textOnImage(Mat& img, const string& s, const Point2i& p);
 };
 
 

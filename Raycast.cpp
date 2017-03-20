@@ -25,9 +25,9 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vector
             for (int i = initialPoint.x; i >= 0; i--) {
                 if (algoXStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, i))
                     break;
-                if (lastColor == 255){
+                if (lastColor > 100){
                     countCurrentNbPixelsWhite++;
-                    if (countCurrentNbPixelsWhite > 300)
+                    if (countCurrentNbPixelsWhite > 50)
                         hit.invalidate = true;
                 } else {
                     countCurrentNbPixelsWhite = 0;
@@ -39,9 +39,9 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vector
             for (int i = current.x; i < img.cols; i++) {
                 if (algoXStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, i))
                     break;
-                if (lastColor == 255){
+                if (lastColor > 100){
                     countCurrentNbPixelsWhite++;
-                    if (countCurrentNbPixelsWhite > 300)
+                    if (countCurrentNbPixelsWhite > 50)
                         hit.invalidate = true;
                 } else {
                     countCurrentNbPixelsWhite = 0;
@@ -55,9 +55,9 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vector
             for (int j = initialPoint.y; j >= 0; j--){
                 if (algoYStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, j))
                     break;
-                if (lastColor == 255){
+                if (lastColor > 100){
                     countCurrentNbPixelsWhite++;
-                    if (countCurrentNbPixelsWhite > 300)
+                    if (countCurrentNbPixelsWhite > 50)
                         hit.invalidate = true;
                 } else {
                     countCurrentNbPixelsWhite = 0;
@@ -69,9 +69,9 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vector
             for (int j = initialPoint.y; j < img.rows; j++){
                 if (algoYStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, j))
                     break;
-                if (lastColor == 255){
+                if (lastColor > 100){
                     countCurrentNbPixelsWhite++;
-                    if (countCurrentNbPixelsWhite > 300)
+                    if (countCurrentNbPixelsWhite > 50)
                         hit.invalidate = true;
                 } else {
                     countCurrentNbPixelsWhite = 0;
@@ -84,7 +84,8 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vector
     hit.stoppingPoint = current;
     int x = current.x - initialPoint.x;
     int y = current.y - initialPoint.y;
-    hit.distanceSquared = (x * x) + (y * y);
+    hit.distanceSquared = abs(x)+abs(y);//(x * x) + (y * y);
+    Globals::textOnImage(drawing, hit.invalidate ? "T" : "F", hit.stoppingPoint);
     return hit;
 }
 
@@ -116,9 +117,9 @@ void Raycast::progressPointOnLineFromYFormula(Point2i &pointToMove, const Point2
     pointToMove.x = (int) (initialPoint.x + lineVec.x * (pointToMove.y - initialPoint.y) / lineVec.y);
 }
 
-bool Raycast::algoXStopOnCollision(const Mat& img, uchar& lastColor, int& nbChangeToIgnore, 
-                                        Point2i& pointToMove, const Point2d& lineVec,
-                                        const Point2i& initialPoint, const int& x) {
+bool Raycast::algoXStopOnCollision(const Mat& img, uchar& lastColor, int& nbChangeToIgnore,
+                                   Point2i& pointToMove, const Point2d& lineVec,
+                                   const Point2i& initialPoint, const int& x) {
     progressPointOnLineFromXFormula(pointToMove, lineVec, initialPoint, x);
     if (hasColorChanged(img, lastColor, pointToMove)){
         if (nbChangeToIgnore != 0){
@@ -130,9 +131,9 @@ bool Raycast::algoXStopOnCollision(const Mat& img, uchar& lastColor, int& nbChan
     return false;
 }
 
-bool Raycast::algoYStopOnCollision(const Mat& img, uchar& lastColor, int& nbChangeToIgnore, 
-                                        Point2i& pointToMove, const Point2d& lineVec,
-                                        const Point2i& initialPoint, const int& y) {
+bool Raycast::algoYStopOnCollision(const Mat& img, uchar& lastColor, int& nbChangeToIgnore,
+                                   Point2i& pointToMove, const Point2d& lineVec,
+                                   const Point2i& initialPoint, const int& y) {
     progressPointOnLineFromYFormula(pointToMove, lineVec, initialPoint, y);
     if (hasColorChanged(img, lastColor, pointToMove)){
         if (nbChangeToIgnore != 0){

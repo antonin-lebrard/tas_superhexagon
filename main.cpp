@@ -12,8 +12,8 @@ Mat toDisplayVideo, gray, drawingContour;
 
 void draw() {
     imshow("scene", toDisplayVideo);
+    imshow("gray", gray);
     imshow("Hull demo", drawingContour);
-    //imshow("gray", gray);
     /// callback mouse if necessary
 }
 
@@ -25,6 +25,7 @@ void doThings(){
 void initThings(){
     cvtColor(toDisplayVideo, gray, COLOR_RGB2GRAY);
     namedWindow("scene", CV_WINDOW_AUTOSIZE);
+    namedWindow("gray", CV_WINDOW_AUTOSIZE);
     namedWindow("Hull demo", CV_WINDOW_AUTOSIZE);
     Utils::computeContours(gray, drawingContour, toDisplayVideo);
 }
