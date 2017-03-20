@@ -6,6 +6,7 @@
 #define PROJECT_RAYCAST_H
 
 #include <iostream>
+#include "string.h"
 #include <cv.h>
 #include "opencv2/highgui/highgui.hpp"
 #include "globals.h"
