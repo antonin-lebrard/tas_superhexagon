@@ -12,7 +12,7 @@
  * @param isTriangleOnTheWay if triangle is in direction of ray, so should be ignored
  * @return point of collision with first wall in direction of vectorLine
  */
-RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vectorLine, int countChangeOfColorToIgnore, const Scalar& color) {
+RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d& vectorLine, int countChangeOfColorToIgnore, const Scalar& color, const int idxRepresentingDistFromTriangle) {
     RaycastHit hit = RaycastHit();
     const Point2i initialPoint = Point2i(img.cols / 2, img.rows / 2);
     Point2i current = Point2i(img.cols / 2, img.rows / 2);
@@ -85,6 +85,7 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d vector
     int x = current.x - initialPoint.x;
     int y = current.y - initialPoint.y;
     hit.distanceSquared = abs(x)+abs(y);//(x * x) + (y * y);
+    hit.idxRepresentingDistFromTriangle = idxRepresentingDistFromTriangle;
     Globals::textOnImage(drawing, hit.invalidate ? "T" : "F", hit.stoppingPoint);
     return hit;
 }
