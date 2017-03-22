@@ -16,6 +16,7 @@ struct RaycastHit {
     Point2i stoppingPoint;
     int distanceSquared;
     bool invalidate = false;
+    int idxRepresentingDistFromTriangle;
 };
 
 struct TriangleDetected {
