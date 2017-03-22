@@ -39,9 +39,9 @@ void Utils::detectTriangle(Mat &img, const vector<vector<Point>>& contours, vect
                                                  + abs(approxTriangle[2].y - approxTriangle[0].y);
             if (approxTriangle[0].x > 290 && approxTriangle[0].x < 460 && approxTriangle[0].y > 150 && approxTriangle[0].y < 330) {
                 if (triangleDetected.perimeterSquared < 50.0) {
-                    for (int j = 0; j < 3; j++) {
+                    /*for (int j = 0; j < 3; j++) {
                         circle(img, approxTriangle[j], 2, Scalar(0, 0, 255), -1);
-                    }
+                    }*/
                     trianglesDetected.push_back(triangleDetected);
                 }
             }
@@ -80,22 +80,31 @@ void Utils::launchRaycasting(Mat& grayscale, Mat& drawingContours, Mat& videoDis
         Point2d directionToTriangle = directionMiddleToTriangle(triangles[0], middle);
         removeTriangle(triangles[0], grayscale);
         Scalar colorRaycast = Scalar(0,0,255);
-        const double angleStep = CV_PI / 180.0 * 22.5;
+        const double angleStep = CV_PI / 180.0 * 11.25;//22.5;
         double currentAngle;
         workP.push_back(WorkPoint());
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 32; i++) {
             currentAngle = angleStep * i;
             Point2d direction = rotateVectorByAngle(directionToTriangle, middle, currentAngle);
-            raycastCollisions.push_back(Raycast::detectCollision(grayscale, drawingContours, direction, 2, colorRaycast));
+            // idxRepresentingDistFromTriangle go from 0 to 16, then go from 15 to 1
+            raycastCollisions.push_back(Raycast::detectCollision(grayscale, drawingContours, direction, 2, colorRaycast, (i < 17) ? i : 32 - i));
             if (i != 0)
                 workP.push_back(constructWork(drawingContours, raycastCollisions[i], raycastCollisions[i-1], middle));
         }
         workP[0] = constructWork(drawingContours, raycastCollisions[0], raycastCollisions[15], middle);
         
-        vector<vector<RaycastHit>> zones = createZones(drawingContours, raycastCollisions, workP);
+        vector<Zone> zones = createZones(drawingContours, raycastCollisions, workP);
         
-        drawZones(drawingContours, zones, middle);
+        vector<int> order = createOrdersForZones(zones, triangles[0]);
         
+        int idx = findBestZone(grayscale, zones);
+        
+        drawZones(drawingContours, zones, middle, idx);
+        
+        // redraw triangle
+        for (int i = 0; i < triangles[0].points.size(); i++){
+            circle(drawingContours, triangles[0].points[i], 2, Scalar(0, 0, 255), -1);
+        }
     }
 }
 
@@ -169,7 +178,7 @@ double Utils::angle(const Point2i &p1, const Point2i &p2) {
     return acos(cosp) * (180 / CV_PI);
 }
 
-WorkPoint Utils::constructWork(Mat& img, const RaycastHit& hit1, const RaycastHit& hit2, const Point2i& middle) {
+WorkPoint Utils::constructWork(const Mat& img, const RaycastHit& hit1, const RaycastHit& hit2, const Point2i& middle) {
     WorkPoint work;
     work.hitPoint = hit1.stoppingPoint;
     Point2i dir = Utils::direction(hit1.stoppingPoint, hit2.stoppingPoint);
@@ -186,50 +195,59 @@ WorkPoint Utils::constructWork(Mat& img, const RaycastHit& hit1, const RaycastHi
     return work;
 }
 
-vector<vector<RaycastHit>> Utils::createZones(Mat& img, const vector<RaycastHit>& collisions, const vector<WorkPoint>& workP) {
-    vector<vector<RaycastHit>> zones = vector<vector<RaycastHit>>();
-    zones.push_back(vector<RaycastHit>());
+vector<Zone> Utils::createZones(const Mat& img, const vector<RaycastHit>& collisions, const vector<WorkPoint>& workP) {
+    vector<Zone> zones = vector<Zone>();
+    zones.push_back(Zone());
     zones[0].push_back(collisions[0]);
 
+    double lower_bound = 59.0, upper_bound = 110.0;
+    
     for (int i = 1; i < collisions.size() - 1; i++) {
         if (collisions[i].invalidate) {
             if (zones[zones.size()-1].size() != 0)
-                zones.push_back(vector<RaycastHit>());
+                zones.push_back(Zone());
             continue;
         }
-        if (isOnBorder(collisions[i].stoppingPoint, img) && isOnBorder(collisions[i-1].stoppingPoint, img)) {
+        if (isOnBorder(collisions[i].stoppingPoint, img)) {
+            if (isOnBorder(collisions[i-1].stoppingPoint, img)) {
+                zones[zones.size() - 1].push_back(collisions[i]);
+                continue;
+            }
+        }
+        if (workP[i].angleNow < lower_bound || workP[i].angleNow > upper_bound) {
+            zones.push_back(Zone());
             zones[zones.size()-1].push_back(collisions[i]);
             continue;
         }
-        if (workP[i].angleNow < 50.0 || workP[i].angleNow > 120.0) {
-            zones.push_back(vector<RaycastHit>());
-            zones[zones.size()-1].push_back(collisions[i]);
-        }
-        else {
-            zones[zones.size()-1].push_back(collisions[i]);
-        }
+        zones[zones.size()-1].push_back(collisions[i]);
     }
+    // if last collision is not valid, return zones directly
     if (collisions[collisions.size()-1].invalidate)
         return zones;
-    /*if (isOnBorder(collisions[0].stoppingPoint, img) && isOnBorder(collisions[collisions.size()-1].stoppingPoint, img)) {
-        
-    }*/
-    if (zones.size() == 1)
-        return zones;
+    
     // last one
-    // if not in same zone as last - 1 raycast, go test with first raycast
-    if (workP[workP.size()-1].angleNow < 50.0 || workP[workP.size()-1].angleNow > 120.0) {
-        // seems to be same zone as first raycast
-        if (workP[0].angleNow > 50.0 || workP[0].angleNow < 120.0) {
+    // last collision touch border, first too, should link them
+    bool linkLastWithFirstCollision = false;
+    if (isOnBorder(collisions[0].stoppingPoint, img) && isOnBorder(collisions[collisions.size()-1].stoppingPoint, img)) {
+        linkLastWithFirstCollision = true;
+    }
+    // first seems to be in same zone as last, should link them
+    else if (workP[0].angleNow > lower_bound || workP[0].angleNow < upper_bound) {
+        linkLastWithFirstCollision = true;
+    }
+    if (linkLastWithFirstCollision) {
+        // last seems to not be connect with last - 1 collision
+        if (workP[workP.size()-1].angleNow < lower_bound || workP[workP.size()-1].angleNow > upper_bound 
+                    && !(isOnBorder(collisions[collisions.size()-1].stoppingPoint, img) && isOnBorder(collisions[collisions.size()-2].stoppingPoint, img))){
             zones[0].insert(zones[0].begin(), collisions[collisions.size()-1]);
-        } else {
-            zones[zones.size()-1].push_back(collisions[collisions.size()-1]);
         }
-    } else {
-        // push back last raycast to last zone
-        zones[zones.size()-1].push_back(collisions[collisions.size()-1]);
-        // if first raycast is also in last zone 
-        if (workP[0].angleNow > 50.0 || workP[0].angleNow < 120.0) {
+        // last seems to be connected with last - 1 collision
+        else {
+            if (zones.size() == 1) {
+                zones[0].push_back(collisions[collisions.size()-1]);
+                return zones;
+            }
+            zones[zones.size()-1].push_back(collisions[collisions.size()-1]);
             // take all raycast from first zone and push them to last zone
             for (int i = 0; i < zones[0].size(); i++){
                 zones[zones.size()-1].push_back(zones[0][i]);
@@ -238,20 +256,62 @@ vector<vector<RaycastHit>> Utils::createZones(Mat& img, const vector<RaycastHit>
             zones[0] = zones[zones.size()-1];
             zones.pop_back();
         }
+    } else {
+        zones.push_back(Zone());
+        zones[zones.size()-1].push_back(collisions[collisions.size()-1]);
     }
     return zones;
 }
 
-void Utils::drawZones(Mat& img, const vector<vector<RaycastHit>>& zones, const Point2i& middle) {
+void Utils::drawZones(Mat& img, const vector<Zone>& zones, const Point2i& middle, const int& idxBest) {
     for (int i = 0; i < zones.size(); i++) {
         if (zones[i].size() != 0) {
             vector<Point2i> sommets = vector<Point2i>();
             sommets.push_back(middle);
             for (int j = 0; j < zones[i].size(); j++){
-                sommets.push_back(zones[i][j].stoppingPoint);
+                sommets.push_back(zones[i].hits[j].stoppingPoint);
             }
-            fillConvexPoly(img, sommets, Scalar(0,255,0));
+            // blue if best, green if not
+            fillConvexPoly(img, sommets, idxBest == i ? Scalar(255,0,0) : Scalar(0,255,0));
         }
     }
+}
+
+int Utils::findBestZone(const Mat& img, const vector<Zone>& zones) {
+    int max = 0, tmp = 0, idx = -1;
+    for (int i = 0; i < zones.size(); i++) {
+        tmp = zones[i].moyenneDistance;
+        if (tmp > max) {
+            idx = i;
+            max = tmp;
+        }
+    }
+    return idx;
+}
+
+// TODO : finish and change into LinkedList (I'm dumb)
+vector<int> Utils::createOrdersForZones(vector<Zone> &zones, TriangleDetected &triangle) {
+    vector<int> order = vector<int>(zones.size());
+    vector<int> furthestIdxs;
+    for (int i = 0; i < zones.size(); i++){
+        zones[i].computeMoyenne();
+        int idxFurthestHit = 0;
+        for (int j = 0; j < zones[i].size(); j++){
+            if (zones[i][j].idxRepresentingDistFromTriangle == 0){
+                idxFurthestHit = 0;
+                break;
+            }
+            if (idxFurthestHit < zones[i][j].idxRepresentingDistFromTriangle)
+                idxFurthestHit = zones[i][j].idxRepresentingDistFromTriangle;
+        }
+        if (furthestIdxs.size() == 0){
+            furthestIdxs.push_back(idxFurthestHit);
+            order[0] = i;
+        }
+        for (unsigned long j = furthestIdxs.size() - 1; j > -1; j--){
+            //if (idxFurthestHit )
+        }
+    }
+    return vector<int>();
 }
 
