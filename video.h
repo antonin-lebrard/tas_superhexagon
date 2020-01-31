@@ -19,6 +19,7 @@ typedef bool (*IsWaitingCallback)();
 class Video {
 
 private:
+    bool advanceOnlyOneFrame = false;
     bool paused = false;
     bool stopping = false;
     int frameTime = 33;
@@ -30,7 +31,7 @@ private:
 public:
     Video(Callback initCallback, Callback doThingsCallback, Callback drawCallback, IsWaitingCallback stopAtFrame);
 
-    void openvideo(String videoName, Mat &frame);
+    void openVideo(const String& videoName, Mat &frame);
 };
 
 
