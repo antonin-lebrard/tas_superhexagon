@@ -5,6 +5,7 @@
 #include "globals.h"
 
 
+bool Globals::drawZones = true;
 bool Globals::stopAtThisFrame = false;
 int Globals::thresh = 100;
 int Globals::countIgnore = 60;
