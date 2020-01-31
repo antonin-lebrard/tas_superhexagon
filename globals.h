@@ -8,6 +8,8 @@
 #include <iostream>
 #include <cv.h>
 #include "opencv2/highgui/highgui.hpp"
+#include "string"
+#include <opencv2/imgproc.hpp>
 
 using namespace cv;
 using namespace std;
@@ -26,6 +28,7 @@ struct TriangleDetected {
 
 class Globals{
 public:
+    static bool drawZones;
     static bool stopAtThisFrame;
     static int thresh;
     static int countIgnore;

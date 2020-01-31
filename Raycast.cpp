@@ -12,7 +12,7 @@
  * @param isTriangleOnTheWay if triangle is in direction of ray, so should be ignored
  * @return point of collision with first wall in direction of vectorLine
  */
-RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d& vectorLine, int countChangeOfColorToIgnore, const Scalar& color, const int idxRepresentingDistFromTriangle) {
+RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, Mat& debug, const Point2d& vectorLine, int countChangeOfColorToIgnore, const Scalar& color, const int idxRepresentingDistFromTriangle) {
     RaycastHit hit = RaycastHit();
     const Point2i initialPoint = Point2i(img.cols / 2, img.rows / 2);
     Point2i current = Point2i(img.cols / 2, img.rows / 2);
@@ -22,17 +22,20 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d& vecto
     //int countChangeOfColorToIgnore = 2 + (triangleOnTheWay ? 2 : 0);
     if (absX > absY){
         if (vectorLine.x < 0.0) {
-            for (int i = initialPoint.x; i >= 0; i--) {
+            for (int i = current.x; i >= 0; i--) {
                 if (algoXStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, i))
                     break;
                 if (lastColor > 100){
                     countCurrentNbPixelsWhite++;
+                    // if the raycast follow the limit of a block coming on the triangle, it will serves nothing to us,
+                    // as we cannot be sure of which side of the limit is passable for the triangle or not.
                     if (countCurrentNbPixelsWhite > 50)
                         hit.invalidate = true;
                 } else {
                     countCurrentNbPixelsWhite = 0;
                 }
-                circle(drawing, current, 1, color, -1);
+                circle(drawing, current, 0, color, 0);
+                circle(debug, current, 0, color, 0);
             }
         }
         else {
@@ -46,13 +49,14 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d& vecto
                 } else {
                     countCurrentNbPixelsWhite = 0;
                 }
-                circle(drawing, current, 1, color, -1);
+                circle(drawing, current, 0, color, 0);
+                circle(debug, current, 0, color, 0);
             }
         }
     }
     else {
         if (vectorLine.y < 0.0) {
-            for (int j = initialPoint.y; j >= 0; j--){
+            for (int j = current.y; j >= 0; j--){
                 if (algoYStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, j))
                     break;
                 if (lastColor > 100){
@@ -62,11 +66,12 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d& vecto
                 } else {
                     countCurrentNbPixelsWhite = 0;
                 }
-                circle(drawing, current, 1, color, -1);
+                circle(drawing, current, 0, color, 0);
+                circle(debug, current, 0, color, 0);
             }
         }
         else {
-            for (int j = initialPoint.y; j < img.rows; j++){
+            for (int j = current.y; j < img.rows; j++){
                 if (algoYStopOnCollision(img, lastColor, countChangeOfColorToIgnore, current, vectorLine, initialPoint, j))
                     break;
                 if (lastColor > 100){
@@ -76,17 +81,19 @@ RaycastHit Raycast::detectCollision(Mat& img, Mat& drawing, const Point2d& vecto
                 } else {
                     countCurrentNbPixelsWhite = 0;
                 }
-                circle(drawing, current, 1, color, -1);
+                circle(drawing, current, 0, color, 0);
+                circle(debug, current, 0, color, 0);
             }
         }
     }
-    //circle(drawing, current, 2, Scalar(0, 0, 255), -1);
+    circle(drawing, current, 0, color, 0);
+    circle(debug, current, 0, color, 0);
     hit.stoppingPoint = current;
     int x = current.x - initialPoint.x;
     int y = current.y - initialPoint.y;
     hit.distanceSquared = abs(x)+abs(y);//(x * x) + (y * y);
     hit.idxRepresentingDistFromTriangle = idxRepresentingDistFromTriangle;
-    Globals::textOnImage(drawing, hit.invalidate ? "T" : "F", hit.stoppingPoint);
+//    Globals::textOnImage(drawing, hit.invalidate ? "T" : "F", hit.stoppingPoint);
     return hit;
 }
 
